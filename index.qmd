@@ -1,0 +1,12 @@
+---
+title: "Siddhartha Mysore"
+about: 
+    template: jolla
+    links: 
+        -   icon: envelope
+            href: mailto:smysore@ucsd.edu
+        -   icon: linkedin
+            href: https://www.linkedin.com/in/siddhartha-sumant-mysore-46577114a/
+---
+
+SiddharthAAA Mysore

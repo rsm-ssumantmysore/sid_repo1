@@ -1,0 +1,5 @@
+---
+title: "Resume"
+---
+{{< pdf Siddhartha_Mysore.pdf width=100% height=800 >}}
+
