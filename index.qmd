@@ -1,5 +1,6 @@
 ---
-title: "Siddhartha Mysore"
+title: "Siddhartha Sumant Mysore"
+image: 'DSC02898.jpg'
 about: 
     template: jolla
     links: 
