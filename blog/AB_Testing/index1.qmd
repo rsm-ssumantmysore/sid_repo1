@@ -17,8 +17,8 @@ This project seeks to replicate their results.
 
 ## Data
 
+:::: {.callout-note collapse="true"}
 ### Description
-
 
 ```{r}
 library(haven)
@@ -27,6 +27,9 @@ library(haven)
 data <- read_dta("karlan_list_2007.dta")
 list.files()
 ```
+::::
+
+:::: {.callout-note collapse="true"}
 ### Description
 ```{r}
 
@@ -52,7 +55,6 @@ data %>%
 
 ```
 
-:::: {.callout-note collapse="true"}
 ### Variable Definitions
 
 | Variable             | Description                                                         |
@@ -111,11 +113,10 @@ data %>%
 
 ::::
 
-
+:::: {.callout-note collapse="true"}
 ### Balance Test 
 
 As an ad hoc test of the randomization mechanism, I provide a series of tests that compare aspects of the treatment and control groups to assess whether they are statistically significantly different from one another.
-
 
 ```{r}
 # Load required libraries
@@ -150,8 +151,9 @@ for (var in vars) {
 Table 1 shows that the treatment and control groups were balanced on key baseline characteristics. That’s important because:
 1. It confirms that random assignment worked.
 2. It rules out the possibility that observed treatment effects are due to pre-existing differences.
+::::
 
-
+:::: {.callout-note collapse="true"}
 ## Experimental Results
 
 ### Charitable Contribution Made
@@ -238,6 +240,8 @@ summary(probit_model)
 2. This supports Table 3, Column 1 of the paper: being assigned to treatment increases the probability of donating — in latent terms.
 3. The latent index increase of 0.087 suggests a meaningful shift in underlying propensity to donate.
 
+::::
+:::: {.callout-note collapse="true"}
 ### Differences between Match Rates
 
 Next, I assess the effectiveness of different sizes of matched donations on the response rate.
@@ -330,8 +334,9 @@ cat("Fitted Diff 2:1 - 1:1 =", coef_2vs1, "\n")
 cat("Fitted Diff 3:1 - 2:1 =", coef_3vs2, "\n")
 
 ```
+::::
 
-
+:::: {.callout-note collapse="true"}
 ### Size of Charitable Contribution
 
 In this subsection, I analyze the effect of the size of matched donation on the size of the charitable contribution.
@@ -415,6 +420,8 @@ ggplot(data_donors[data_donors$treatment == 0, ], aes(x = amount)) +
   theme_minimal()
 
 ```
+::::
+:::: {.callout-note collapse="true"}
 
 ## Simulation Experiment
 
@@ -423,7 +430,9 @@ As a reminder of how the t-statistic "works," in this section I use simulation t
 Suppose the true distribution of respondents who do not get a charitable donation match is Bernoulli with probability p=0.018 that a donation is made. 
 
 Further suppose that the true distribution of respondents who do get a charitable donation match of any size  is Bernoulli with probability p=0.022 that a donation is made.
+::::
 
+:::: {.callout-note collapse="true"}
 ### Law of Large Numbers
 
 ```{r}
@@ -469,7 +478,8 @@ legend("bottomright", legend = c("Cumulative Average", "True Difference"),
 Yes — the cumulative average approaches the true difference in means.
 This illustrates the Law of Large Numbers: with more data, your estimate becomes more stable and closer to the true population value.
 It also reinforces the power of randomization and repeated sampling — even if individual draws are noisy, the average across many replicates becomes reliable.
-
+::::
+:::: {.callout-note collapse="true"}
 ### Central Limit Theorem
 
 ```{r}
@@ -516,5 +526,4 @@ As sample size increases (200 → 500 → 1000):
 The distribution becomes narrower.
 It starts to center away from zero, and zero moves to the tail of the distribution.
 This reflects increasing statistical power — you’re more likely to detect the true effect as the sample grows.
-
-```
+::::
