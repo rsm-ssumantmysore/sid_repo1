@@ -346,7 +346,7 @@ average_effect <- mean(effect_vec)
 average_effect
 ```
 
-
+The model estimates that using Blueprinty’s software increases the expected number of patents by approximately 0.79 patents per user, on average.
 
 ## AirBnB Case Study
 
