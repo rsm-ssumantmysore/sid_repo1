@@ -1,0 +1,380 @@
+---
+title: "Homework 4"
+author: "Siddhartha Sumant Mysore"
+date: "June 9, 2025"
+---
+## 1a. K-Means
+
+```{r}
+# Load data
+penguins <- read.csv("/Users/siddharthamysore/sid_site/blog/Project_4/palmer_penguins.csv")
+penguins <- penguins[!is.na(penguins$bill_length_mm) & !is.na(penguins$flipper_length_mm),
+                     c("bill_length_mm", "flipper_length_mm")]
+X <- as.matrix(penguins)
+set.seed(123)
+
+```
+
+```{r}
+initialize_centroids <- function(X, k) {
+  idx <- sample(1:nrow(X), k)
+  X[idx, ]
+}
+
+assign_clusters <- function(X, centroids) {
+  apply(X, 1, function(x) {
+    which.min(colSums((t(centroids) - x)^2))
+  })
+}
+
+update_centroids <- function(X, clusters, k) {
+  centroids <- matrix(NA, nrow = k, ncol = ncol(X))
+  for (i in 1:k) {
+    centroids[i, ] <- colMeans(X[clusters == i, , drop = FALSE])
+  }
+  centroids
+}
+
+kmeans_custom_with_tracking <- function(X, k, max_iters = 10, tol = 1e-4) {
+  centroids <- initialize_centroids(X, k)
+  steps <- list()
+  
+  for (i in 1:max_iters) {
+    clusters <- assign_clusters(X, centroids)
+    steps[[i]] <- list(centroids = centroids, clusters = clusters)
+    new_centroids <- update_centroids(X, clusters, k)
+    if (sum((centroids - new_centroids)^2) < tol) break
+    centroids <- new_centroids
+  }
+  
+  list(centroids = centroids, clusters = clusters, steps = steps)
+}
+
+
+```
+
+```{r}
+# Run your custom K-means algorithm and store the results
+k <- 3
+result <- kmeans_custom_with_tracking(X, k)
+steps <- result$steps
+
+
+```
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+# Safely create plot list
+plot_list <- lapply(seq_along(steps), function(i) {
+  s <- steps[[i]]
+  if (is.null(s$centroids) || is.null(s$clusters)) return(NULL)
+  
+  cent <- as.data.frame(s$centroids)
+  colnames(cent) <- c("bill_length_mm", "flipper_length_mm")
+  
+  df <- as.data.frame(X)
+  df$cluster <- factor(s$clusters)
+
+  ggplot(df, aes(x = bill_length_mm, y = flipper_length_mm, color = cluster)) +
+    geom_point(size = 2) +
+    geom_point(data = cent, aes(x = bill_length_mm, y = flipper_length_mm),
+               color = "black", shape = 4, size = 4, stroke = 2) +
+    labs(title = paste("Iteration", i), color = "Cluster") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.title = element_text(size = 10),
+      axis.text = element_text(size = 8),
+      legend.position = "none"
+    )
+})
+
+# Remove any NULLs before plotting
+plot_list_clean <- plot_list[!sapply(plot_list, is.null)]
+
+# Combine plots into 2 rows
+wrap_plots(plot_list_clean, nrow = 2)
+
+```
+
+```{r}
+kmeans_builtin <- kmeans(X, centers = 3, nstart = 25)
+df_builtin <- as.data.frame(X)
+df_builtin$cluster <- factor(kmeans_builtin$cluster)
+
+ggplot(df_builtin, aes(x = bill_length_mm, y = flipper_length_mm, color = cluster)) +
+  geom_point(size = 2) +
+  geom_point(data = as.data.frame(kmeans_builtin$centers),
+             aes(x = bill_length_mm, y = flipper_length_mm),
+             shape = 4, color = "black", size = 4, stroke = 2) +
+  labs(title = "Built-in KMeans (K = 3)", color = "Cluster") +
+  theme_minimal()
+
+
+```
+
+```{r}
+library(ggplot2)
+library(cluster)     # silhouette()
+library(patchwork)   # side-by-side plots
+
+wcss <- numeric(6)        # for K = 2 to 7
+sil_scores <- numeric(6)  # same length
+
+for (k in 2:7) {
+  km <- kmeans(X, centers = k, nstart = 25)
+  wcss[k - 1] <- km$tot.withinss
+  
+  sil <- silhouette(km$cluster, dist(X))
+  sil_scores[k - 1] <- mean(sil[, 3])
+}
+
+```
+
+```{r}
+# Elbow Plot (WCSS)
+elbow_plot <- ggplot(data.frame(K = 2:7, WCSS = wcss), aes(x = K, y = WCSS)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(size = 3) +
+  labs(title = "Elbow Method", x = "Number of Clusters (K)", y = "WCSS") +
+  theme_minimal()
+
+# Silhouette Plot
+sil_plot <- ggplot(data.frame(K = 2:7, Silhouette = sil_scores), aes(x = K, y = Silhouette)) +
+  geom_line(color = "darkgreen", size = 1) +
+  geom_point(size = 3) +
+  labs(title = "Silhouette Scores", x = "Number of Clusters (K)", y = "Average Silhouette") +
+  theme_minimal()
+
+# Show side by side
+elbow_plot + sil_plot
+
+
+```
+
+
+## 2a. K Nearest Neighbors
+
+_todo: use the following code (or the python equivalent) to generate a synthetic dataset for the k-nearest neighbors algorithm.  The code generates a dataset with two features, `x1` and `x2`, and a binary outcome variable `y` that is determined by whether `x2` is above or below a wiggly boundary defined by a sin function._
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Number of points
+n <- 100
+
+# Generate features
+x1 <- runif(n, -3, 3)
+x2 <- runif(n, -3, 3)
+
+# Define the wiggly boundary
+boundary <- sin(4 * x1) + x1
+
+# Binary outcome: 1 if x2 is above the boundary, else 0
+y <- ifelse(x2 > boundary, 1, 0)
+
+# Combine into a data frame
+dat <- data.frame(x1 = x1, x2 = x2, y = as.factor(y))
+
+# Create a boundary curve for plotting
+boundary_df <- data.frame(x1 = seq(-3, 3, length.out = 300))
+boundary_df$x2 <- sin(4 * boundary_df$x1) + boundary_df$x1
+
+# Plot the synthetic dataset
+ggplot(dat, aes(x = x1, y = x2, color = y)) +
+  geom_point(size = 2.5) +
+  geom_line(data = boundary_df, aes(x = x1, y = x2), 
+            color = "black", linetype = "dashed", linewidth = 1) +
+  scale_color_manual(values = c("blue", "red"), labels = c("Class 0", "Class 1")) +
+  labs(
+    title = "Synthetic KNN Dataset with Sinusoidal Boundary",
+    x = "x1", y = "x2", color = "Class"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+
+_todo: plot the data where the horizontal axis is `x1`, the vertical axis is `x2`, and the points are colored by the value of `y`.  You may optionally draw the wiggly boundary._
+
+
+```{r}
+# Load required library
+library(ggplot2)
+
+# Assuming dat and boundary_df are already created
+# If not, recreate them here (just in case)
+set.seed(42)
+n <- 100
+x1 <- runif(n, -3, 3)
+x2 <- runif(n, -3, 3)
+boundary <- sin(4 * x1) + x1
+y <- ifelse(x2 > boundary, 1, 0)
+dat <- data.frame(x1 = x1, x2 = x2, y = as.factor(y))
+
+boundary_df <- data.frame(x1 = seq(-3, 3, length.out = 300))
+boundary_df$x2 <- sin(4 * boundary_df$x1) + boundary_df$x1
+
+# Plot the dataset
+ggplot(dat, aes(x = x1, y = x2, color = y)) +
+  geom_point(size = 2.5, alpha = 0.85) +
+  geom_line(data = boundary_df, aes(x = x1, y = x2),
+            color = "black", linetype = "dashed", linewidth = 1) +
+  scale_color_manual(values = c("blue", "red"), labels = c("Class 0", "Class 1")) +
+  labs(
+    title = "Synthetic Classification Data",
+    subtitle = "With Optional Sinusoidal Decision Boundary",
+    x = "x1", y = "x2", color = "Class (y)"
+  ) +
+  theme_minimal()
+
+```
+_todo: generate a test dataset with 100 points, using the same code as above but with a different seed._
+
+
+```{r}
+# Generate a test dataset with a different seed
+set.seed(2025)
+
+n_test <- 100
+x1_test <- runif(n_test, -3, 3)
+x2_test <- runif(n_test, -3, 3)
+
+# Define the same sinusoidal boundary
+boundary_test <- sin(4 * x1_test) + x1_test
+y_test <- ifelse(x2_test > boundary_test, 1, 0)
+
+# Create test data frame
+test_data <- data.frame(
+  x1 = x1_test,
+  x2 = x2_test,
+  y = as.factor(y_test)
+)
+
+# Optional: create boundary for plotting
+boundary_df_test <- data.frame(
+  x1 = seq(-3, 3, length.out = 300)
+)
+boundary_df_test$x2 <- sin(4 * boundary_df_test$x1) + boundary_df_test$x1
+
+# Plot the test set
+ggplot(test_data, aes(x = x1, y = x2, color = y)) +
+  geom_point(size = 2.5, alpha = 0.85) +
+  geom_line(data = boundary_df_test, aes(x = x1, y = x2),
+            color = "black", linetype = "dashed", linewidth = 1) +
+  scale_color_manual(values = c("blue", "red"), labels = c("Class 0", "Class 1")) +
+  labs(
+    title = "Test Dataset with Sinusoidal Boundary",
+    x = "x1", y = "x2", color = "Class (y)"
+  ) +
+  theme_minimal()
+
+
+```
+
+_todo: implement KNN by hand.  Check you work with a built-in function -- eg, `class::knn()` or `caret::train(method="knn")` in R, or scikit-learn's `KNeighborsClassifier` in Python._
+
+```{r}
+knn_manual <- function(train_x, train_y, test_x, k) {
+  pred <- character(nrow(test_x))  # prediction vector
+  
+  for (i in 1:nrow(test_x)) {
+    # Compute Euclidean distances
+    dists <- sqrt(rowSums((train_x - matrix(rep(test_x[i, ], nrow(train_x)), ncol = 2, byrow = TRUE))^2))
+    
+    # Get indices of k nearest neighbors (k is dynamic)
+    neighbors <- order(dists)[1:k]
+    
+    # Majority vote
+    neighbor_labels <- train_y[neighbors]
+    pred[i] <- names(sort(table(neighbor_labels), decreasing = TRUE))[1]
+  }
+  
+  return(factor(pred, levels = levels(train_y)))
+}
+
+```
+
+## 🔍 Apply Manual KNN on Test Set (k = 5)
+
+
+
+```{r}
+library(class)
+
+# Ensure factor levels are consistent
+train_y <- factor(dat$y)
+test_y <- factor(test_data$y, levels = levels(train_y))
+
+# Convert to matrices for manual KNN
+train_x <- as.matrix(dat[, c("x1", "x2")])
+test_x <- as.matrix(test_data[, c("x1", "x2")])
+
+# Predict using manual KNN
+pred_manual <- knn_manual(train_x, train_y, test_x, k = 5)
+manual_accuracy <- mean(pred_manual == test_y)
+
+# Predict using built-in KNN
+pred_builtin <- knn(train = train_x, test = test_x, cl = train_y, k = 5)
+builtin_accuracy <- mean(pred_builtin == test_y)
+
+# Show both accuracies
+manual_accuracy
+builtin_accuracy
+
+```
+
+
+_todo: run your function for k=1,...,k=30, each time noting the percentage of correctly-classified points from the test dataset. Plot the results, where the horizontal axis is 1-30 and the vertical axis is the percentage of correctly-classified points. What is the optimal value of k as suggested by your plot?_ 
+```{r}
+# Initialize accuracy storage vector
+accuracy_vec <- numeric(30)
+
+# Run manual KNN for k = 1 to 30
+for (k in 1:30) {
+  pred_k <- knn_manual(train_x, train_y, test_x, k)
+  accuracy_vec[k] <- mean(pred_k == test_y)
+}
+
+```
+
+
+
+```{r}
+# Create data frame for plotting
+acc_df <- data.frame(k = 1:30, accuracy = 100 * accuracy_vec)
+
+library(ggplot2)
+
+ggplot(acc_df, aes(x = k, y = accuracy)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = which.max(accuracy_vec), linetype = "dashed", color = "red") +
+  annotate("text", x = which.max(accuracy_vec), y = max(100 * accuracy_vec),
+           label = paste("Best k =", which.max(accuracy_vec)),
+           vjust = -1, color = "red", size = 4) +
+  labs(
+    title = "Test Accuracy vs. Number of Nearest Neighbors (k)",
+    x = "k (Number of Neighbors)",
+    y = "Test Accuracy (%)"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
